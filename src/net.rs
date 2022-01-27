@@ -172,6 +172,7 @@ pub struct TcpNetEntry {
     pub state: TcpState,
     pub rx_queue: u32,
     pub tx_queue: u32,
+    pub retransmits: u32,
     pub inode: u64,
 }
 
@@ -183,6 +184,7 @@ pub struct UdpNetEntry {
     pub state: UdpState,
     pub rx_queue: u32,
     pub tx_queue: u32,
+    pub retransmits: u32,
     pub inode: u64,
 }
 
@@ -272,7 +274,8 @@ pub fn read_tcp_table<R: Read>(reader: BufReader<R>) -> ProcResult<Vec<TcpNetEnt
         let tx_queue = from_str!(u32, expect!(tx_rx_queue.next(), "tcp::tx_queue"), 16);
         let rx_queue = from_str!(u32, expect!(tx_rx_queue.next(), "tcp::rx_queue"), 16);
         s.next(); // skip tr and tm->when
-        s.next(); // skip retrnsmt
+        let retransmits = from_str!(u32, expect!(s.next(), "tcp::retrnsmt"), 16);
+        // s.next(); // skip retrnsmt
         s.next(); // skip uid
         s.next(); // skip timeout
         let inode = expect!(s.next(), "tcp::inode");
@@ -282,6 +285,7 @@ pub fn read_tcp_table<R: Read>(reader: BufReader<R>) -> ProcResult<Vec<TcpNetEnt
             remote_address: parse_addressport_str(rem_address)?,
             rx_queue,
             tx_queue,
+            retransmits,
             state: expect!(TcpState::from_u8(from_str!(u8, state, 16))),
             inode: from_str!(u64, inode),
         });
@@ -306,7 +310,8 @@ pub fn read_udp_table<R: Read>(reader: BufReader<R>) -> ProcResult<Vec<UdpNetEnt
         let tx_queue: u32 = from_str!(u32, expect!(tx_rx_queue.next(), "udp::tx_queue"), 16);
         let rx_queue: u32 = from_str!(u32, expect!(tx_rx_queue.next(), "udp::rx_queue"), 16);
         s.next(); // skip tr and tm->when
-        s.next(); // skip retrnsmt
+        let retransmits = from_str!(u32, expect!(s.next(), "tcp::retrnsmt"), 16);
+        // s.next(); // skip retrnsmt
         s.next(); // skip uid
         s.next(); // skip timeout
         let inode = expect!(s.next(), "udp::inode");
@@ -316,6 +321,7 @@ pub fn read_udp_table<R: Read>(reader: BufReader<R>) -> ProcResult<Vec<UdpNetEnt
             remote_address: parse_addressport_str(rem_address)?,
             rx_queue,
             tx_queue,
+            retransmits,
             state: expect!(UdpState::from_u8(from_str!(u8, state, 16))),
             inode: from_str!(u64, inode),
         });

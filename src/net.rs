@@ -268,7 +268,7 @@ pub fn read_tcp_table<R: Read>(reader: BufReader<R>) -> ProcResult<Vec<TcpNetEnt
     for line in reader.lines().skip(1) {
         let line = line?;
         let mut s = line.split_whitespace();
-        let sl = from_str!(u32, expect!(s.next(), "tcp::sl"), 10);
+        let sl = from_str!(u32, expect!(s.next().map(|sl| sl.strip_suffix(':')), "tcp::sl"), 10);
         // s.next();
         let local_address = expect!(s.next(), "tcp::local_address");
         let rem_address = expect!(s.next(), "tcp::rem_address");
@@ -306,7 +306,7 @@ pub fn read_udp_table<R: Read>(reader: BufReader<R>) -> ProcResult<Vec<UdpNetEnt
     for line in reader.lines().skip(1) {
         let line = line?;
         let mut s = line.split_whitespace();
-        let sl = from_str!(u32, expect!(s.next(), "udp::sl"), 10);
+        let sl = from_str!(u32, expect!(s.next().map(|sl| sl.strip_suffix(':')), "udp::sl"), 10);
         // s.next();
         let local_address = expect!(s.next(), "udp::local_address");
         let rem_address = expect!(s.next(), "udp::rem_address");

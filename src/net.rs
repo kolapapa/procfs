@@ -167,6 +167,7 @@ impl UnixState {
 /// An entry in the TCP socket table
 #[derive(Debug, Clone)]
 pub struct TcpNetEntry {
+    pub sl: u32,
     pub local_address: SocketAddr,
     pub remote_address: SocketAddr,
     pub state: TcpState,
@@ -179,6 +180,7 @@ pub struct TcpNetEntry {
 /// An entry in the UDP socket table
 #[derive(Debug, Clone)]
 pub struct UdpNetEntry {
+    pub sl: u32,
     pub local_address: SocketAddr,
     pub remote_address: SocketAddr,
     pub state: UdpState,
@@ -266,7 +268,8 @@ pub fn read_tcp_table<R: Read>(reader: BufReader<R>) -> ProcResult<Vec<TcpNetEnt
     for line in reader.lines().skip(1) {
         let line = line?;
         let mut s = line.split_whitespace();
-        s.next();
+        let sl = from_str!(u32, expect!(s.next(), "tcp::sl"), 10);
+        // s.next();
         let local_address = expect!(s.next(), "tcp::local_address");
         let rem_address = expect!(s.next(), "tcp::rem_address");
         let state = expect!(s.next(), "tcp::st");
@@ -281,6 +284,7 @@ pub fn read_tcp_table<R: Read>(reader: BufReader<R>) -> ProcResult<Vec<TcpNetEnt
         let inode = expect!(s.next(), "tcp::inode");
 
         vec.push(TcpNetEntry {
+            sl,
             local_address: parse_addressport_str(local_address)?,
             remote_address: parse_addressport_str(rem_address)?,
             rx_queue,
@@ -302,7 +306,8 @@ pub fn read_udp_table<R: Read>(reader: BufReader<R>) -> ProcResult<Vec<UdpNetEnt
     for line in reader.lines().skip(1) {
         let line = line?;
         let mut s = line.split_whitespace();
-        s.next();
+        let sl = from_str!(u32, expect!(s.next(), "udp::sl"), 10);
+        // s.next();
         let local_address = expect!(s.next(), "udp::local_address");
         let rem_address = expect!(s.next(), "udp::rem_address");
         let state = expect!(s.next(), "udp::st");
@@ -310,13 +315,14 @@ pub fn read_udp_table<R: Read>(reader: BufReader<R>) -> ProcResult<Vec<UdpNetEnt
         let tx_queue: u32 = from_str!(u32, expect!(tx_rx_queue.next(), "udp::tx_queue"), 16);
         let rx_queue: u32 = from_str!(u32, expect!(tx_rx_queue.next(), "udp::rx_queue"), 16);
         s.next(); // skip tr and tm->when
-        let retransmits = from_str!(u32, expect!(s.next(), "tcp::retrnsmt"), 16);
+        let retransmits = from_str!(u32, expect!(s.next(), "udp::retrnsmt"), 16);
         // s.next(); // skip retrnsmt
         s.next(); // skip uid
         s.next(); // skip timeout
         let inode = expect!(s.next(), "udp::inode");
 
         vec.push(UdpNetEntry {
+            sl,
             local_address: parse_addressport_str(local_address)?,
             remote_address: parse_addressport_str(rem_address)?,
             rx_queue,
